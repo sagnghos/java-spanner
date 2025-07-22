@@ -20,6 +20,7 @@ import static com.google.common.base.Preconditions.checkState;
 
 import com.google.api.gax.grpc.InstantiatingGrpcChannelProvider;
 import com.google.auth.oauth2.GoogleCredentials;
+import com.google.cloud.NoCredentials;
 import com.google.cloud.spanner.spi.v1.SpannerInterceptorProvider;
 import io.grpc.CallOptions;
 import io.grpc.Channel;
@@ -28,6 +29,7 @@ import io.grpc.ClientInterceptor;
 import io.grpc.ForwardingClientCall.SimpleForwardingClientCall;
 import io.grpc.ForwardingClientCallListener.SimpleForwardingClientCallListener;
 import io.grpc.Grpc;
+import io.grpc.ManagedChannelBuilder;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 import io.grpc.Status;
@@ -55,14 +57,16 @@ public class GceTestEnvConfig implements TestEnvConfig {
 
   private static final String DIRECT_PATH_ENDPOINT = "wrenchworks-nonprod.googleapis.com:443";
 
-  private static final String ENABLE_EXPERIMENTAL_HOST = "spanner.enable_experimental_host";
-
-  private static final String EXPERIMENTAL_HOST_ENDPOINT = "http://localhost:15000";
+  private static final String EXPERIMENTAL_HOST = "spanner.experimental_host";
+  private static final String USE_PLAIN_TEXT = "spanner.use_plain_text";
+  private static final String USE_MTLS = "spanner.mtls";
+  private static final String CLIENT_CERT_PATH = "spanner.client_cert_path";
+  private static final String CLIENT_CERT_KEY_PATH = "spanner.client_cert_key_path";
 
   private final SpannerOptions options;
 
   public GceTestEnvConfig() {
-    System.out.println("GceTestEnvConfig");
+    System.out.println("Entering GceTestEnvConfig");
     String projectId = System.getProperty(GCE_PROJECT_ID, "");
     String serverUrl = System.getProperty(GCE_SERVER_URL, "");
     String credentialsFile = System.getProperty(GCE_CREDENTIALS_FILE, "");
@@ -71,7 +75,7 @@ public class GceTestEnvConfig implements TestEnvConfig {
     checkState(errorProbability <= 1.0);
     boolean enableDirectAccess = Boolean.getBoolean(ENABLE_DIRECT_ACCESS);
     String directPathTestScenario = System.getProperty(DIRECT_PATH_TEST_SCENARIO, "");
-    boolean isExperimentalHost = Boolean.getBoolean(ENABLE_EXPERIMENTAL_HOST);
+    String experimentalHost = System.getProperty(EXPERIMENTAL_HOST, "");
     SpannerOptions.Builder builder =
         SpannerOptions.newBuilder()
             .setAutoThrottleAdministrativeRequests()
@@ -108,9 +112,23 @@ public class GceTestEnvConfig implements TestEnvConfig {
       builder.setChannelProvider(customChannelProviderBuilder.build());
     }
 
-    if (isExperimentalHost) {
+    if (!experimentalHost.isEmpty()) {
+      boolean usePlainText = Boolean.getBoolean(USE_PLAIN_TEXT);
+      boolean useMTLS = Boolean.getBoolean(USE_MTLS);
       System.out.println("Experimental Host SET!!!");
-      builder.setExperimentalHost(EXPERIMENTAL_HOST_ENDPOINT);
+      builder.setExperimentalHost(experimentalHost);
+      if (usePlainText) {
+        System.out.println("use plain text set");
+        builder
+            .setChannelConfigurator(ManagedChannelBuilder::usePlaintext)
+            .setCredentials(NoCredentials.getInstance());
+      }
+      if (useMTLS) {
+        System.out.println("use mtls connection");
+        String clientCertificate = System.getProperty(CLIENT_CERT_PATH, "");
+        String clientKey = System.getProperty(CLIENT_CERT_KEY_PATH, "");
+        builder.useClientCert(clientCertificate, clientKey);
+      }
     }
     options = builder.build();
   }
