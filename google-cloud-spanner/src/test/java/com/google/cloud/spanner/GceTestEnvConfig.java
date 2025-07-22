@@ -55,9 +55,14 @@ public class GceTestEnvConfig implements TestEnvConfig {
 
   private static final String DIRECT_PATH_ENDPOINT = "wrenchworks-nonprod.googleapis.com:443";
 
+  private static final String ENABLE_EXPERIMENTAL_HOST = "spanner.enable_experimental_host";
+
+  private static final String EXPERIMENTAL_HOST_ENDPOINT = "localhost:15000";
+
   private final SpannerOptions options;
 
   public GceTestEnvConfig() {
+    System.out.println("GceTestEnvConfig");
     String projectId = System.getProperty(GCE_PROJECT_ID, "");
     String serverUrl = System.getProperty(GCE_SERVER_URL, "");
     String credentialsFile = System.getProperty(GCE_CREDENTIALS_FILE, "");
@@ -66,6 +71,7 @@ public class GceTestEnvConfig implements TestEnvConfig {
     checkState(errorProbability <= 1.0);
     boolean enableDirectAccess = Boolean.getBoolean(ENABLE_DIRECT_ACCESS);
     String directPathTestScenario = System.getProperty(DIRECT_PATH_TEST_SCENARIO, "");
+    boolean isExperimentalHost = Boolean.getBoolean(ENABLE_EXPERIMENTAL_HOST);
     SpannerOptions.Builder builder =
         SpannerOptions.newBuilder()
             .setAutoThrottleAdministrativeRequests()
@@ -100,6 +106,11 @@ public class GceTestEnvConfig implements TestEnvConfig {
           .setAttemptDirectPathXds()
           .setInterceptorProvider(interceptorProvider);
       builder.setChannelProvider(customChannelProviderBuilder.build());
+    }
+
+    if (isExperimentalHost) {
+      System.out.println("Experimental Host SET!!!");
+      builder.setExperimentalHost(EXPERIMENTAL_HOST_ENDPOINT);
     }
     options = builder.build();
   }
