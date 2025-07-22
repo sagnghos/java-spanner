@@ -57,7 +57,7 @@ public class GceTestEnvConfig implements TestEnvConfig {
 
   private static final String ENABLE_EXPERIMENTAL_HOST = "spanner.enable_experimental_host";
 
-  private static final String EXPERIMENTAL_HOST_ENDPOINT = "localhost:15000";
+  private static final String EXPERIMENTAL_HOST_ENDPOINT = "http://localhost:15000";
 
   private final SpannerOptions options;
 
