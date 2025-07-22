@@ -37,10 +37,13 @@ import com.google.protobuf.FieldMask;
 import com.google.spanner.admin.database.v1.*;
 import java.util.List;
 import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.annotation.Nullable;
 
 /** Default implementation of {@link DatabaseAdminClient}. */
 class DatabaseAdminClientImpl implements DatabaseAdminClient {
+  private static final Logger logger = Logger.getLogger(DatabaseAdminClientImpl.class.getName());
   private static final class PolicyMarshaller extends DefaultMarshaller {
     @Override
     protected Policy fromPb(com.google.iam.v1.Policy policyPb) {
@@ -490,6 +493,7 @@ class DatabaseAdminClientImpl implements DatabaseAdminClient {
 
   @Override
   public Page<Database> listDatabases(String instanceId, ListOption... options) {
+    logger.log(Level.INFO, "Dropping old test database {0}", instanceId);
     final String instanceName = getInstanceName(instanceId);
     final Options listOptions = Options.fromListOptions(options);
     Preconditions.checkArgument(
@@ -501,6 +505,7 @@ class DatabaseAdminClientImpl implements DatabaseAdminClient {
           public Paginated<com.google.spanner.admin.database.v1.Database> getNextPage(
               String nextPageToken) {
             try {
+              logger.log(Level.INFO, "Dropping old test database {0}", instanceName);
               return rpc.listDatabases(instanceName, pageSize, nextPageToken);
             } catch (SpannerException e) {
               throw SpannerExceptionFactory.newSpannerException(

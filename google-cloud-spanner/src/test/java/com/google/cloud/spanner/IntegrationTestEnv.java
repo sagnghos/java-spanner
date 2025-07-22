@@ -296,6 +296,7 @@ public class IntegrationTestEnv extends ExternalResource {
 
     logger.log(Level.INFO, "Dropping old test databases from {0}", instanceId.getName());
     for (Database db : databaseAdminClient.listDatabases(instanceId.getInstance()).iterateAll()) {
+      logger.log(Level.INFO, "Dropping old test database {0}", db.getId());
       try {
         long timeDiff = currentTimestamp.getSeconds() - db.getCreateTime().getSeconds();
         // Delete all databases which are more than OLD_DB_THRESHOLD_SECS seconds old.
